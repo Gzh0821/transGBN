@@ -42,6 +42,8 @@ class MACAddress:
             return False
         return self.mac_bytes == other.mac_bytes
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.mac_str
 
+    def __hash__(self) -> int:
+        return hash(self.mac_bytes)
