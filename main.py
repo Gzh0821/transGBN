@@ -1,8 +1,7 @@
-# 按 双击 Shift 在所有地方搜索类、文件、工具窗口、操作和设置。
 import GbnTool.ByteTool
 from GbnFrame import *
 
-# 按间距中的绿色按钮以运行脚本。
+
 if __name__ == '__main__':
     print(math.ceil(math.log(255+1, 2) / 8))
     a = b'\xab'
@@ -17,5 +16,3 @@ if __name__ == '__main__':
     q = GBNFrame.from_bytes(p.to_bytes())
     if p == q:
         print("Yes!")
-
-# 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助
