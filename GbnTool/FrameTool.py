@@ -1,7 +1,7 @@
 from GbnTool import crcmod
-from GbnTool.AddrTool import *
-from GbnTool.ErrorTool import *
-from GbnTool.configTool import *
+from GbnTool.AddrTool import MACAddress
+from GbnTool.ErrorTool import CRCError
+from GbnTool.configTool import GbnConfig
 
 
 class GbnFrame:

@@ -1,6 +1,8 @@
 from GbnTool import binascii
 
 
+# 二进制串相关工具
+
 def to_binary_str(src: bytes) -> str:
     """
     Change bytes to binary str.

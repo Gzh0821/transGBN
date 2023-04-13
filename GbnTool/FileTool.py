@@ -1,6 +1,8 @@
-from GbnTool import os
+from GbnTool import os, math
 from GbnTool.configTool import GbnConfig
 
+
+# 文件读写工具
 
 class FileReader:
     BUF_SIZE = GbnConfig.DATA_SIZE - 1
@@ -21,11 +23,14 @@ class FileReader:
 
     def __next__(self) -> bytes:
         if self.name_point < len(self.file_path_list):
+            # 返回文件名
             self.name_point += 1
             return self.file_path_list[self.name_point - 1]
         elif self.end_flag:
+            # 终止迭代
             raise StopIteration
         elif self.read_size >= self.file_size:
+            # 返回结束标志
             self.file.close()
             self.end_flag = True
             return GbnConfig.FILE_END_FLAG
@@ -36,6 +41,9 @@ class FileReader:
 
     def __del__(self):
         self.file.close()
+
+    def __len__(self):
+        return len(self.file_path_list) + math.ceil(self.file_size / (GbnConfig.DATA_SIZE - 1)) + 1
 
 
 class FileWriter:
@@ -60,5 +68,12 @@ class FileWriter:
             return True
         return False
 
+    def reset(self):
+        self.file_path = None
+        self.file_path_list = []
+        self.file = None
+        self.if_open = False
+
     def __del__(self):
-        self.file.close()
+        if self.file is not None:
+            self.file.close()
