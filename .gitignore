@@ -8,6 +8,7 @@ __pycache__/
 *.so
 test.*
 newtest.*
+temp/
 # Distribution / packaging
 .Python
 build/

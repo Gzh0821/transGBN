@@ -2,6 +2,9 @@ from GbnTool import configparser, math
 
 
 class GbnConfig:
+    FILE_NAME_FLAG = b'\x81'
+    FILE_DATA_FLAG = b'\x99'
+    FILE_END_FLAG = b'\xbd'
     DATA_SIZE = SW_SIZE = SEQ_BIT_SIZE = INIT_SEQ_NO = None
     START_FLAG = b'\xab'  # 帧的起始标志
 
