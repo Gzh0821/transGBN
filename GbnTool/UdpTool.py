@@ -1,7 +1,4 @@
-import errno
-import queue
-
-from GbnTool import socket, threading
+from GbnTool import socket, threading, errno
 from GbnTool.AddrTool import MACAddress
 from GbnTool.ConfigTool import GbnConfig
 from GbnTool.ErrorTool import CRCError
