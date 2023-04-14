@@ -3,7 +3,7 @@ from GbnTool.AddrTool import MACAddress
 from GbnTool.ConfigTool import GbnConfig
 from GbnTool.ErrorTool import CRCError
 from GbnTool.FileTool import FileWriter, FileReader
-from GbnTool.FrameTool import AckFrame, GbnFrame, FrameFactory, GbnWindows
+from GbnTool.FrameTool import AckFrame, FrameFactory, GbnWindows
 from GbnTool.LogTool import GbnLog
 
 # 存储接收线程接收到的ack包，交给发送线程移动窗口

@@ -1,6 +1,4 @@
-import time
-
-from GbnTool import crcmod
+from GbnTool import crcmod, time
 from GbnTool.AddrTool import MACAddress
 from GbnTool.ConfigTool import GbnConfig
 from GbnTool.ErrorTool import CRCError

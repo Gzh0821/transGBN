@@ -10,7 +10,7 @@ import threading
 import random
 import errno
 import logging
+import time
 from GbnTool.ConfigTool import GbnConfig
-
 
 GbnConfig.init()
