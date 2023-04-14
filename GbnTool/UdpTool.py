@@ -98,7 +98,8 @@ class ReceiveThread(threading.Thread):
                                          ack_num=rec_frame.seq_num)
                     # 发送确认帧
                     self.udp_handle.send(ack_frame.frame_bytes)
-
+                if rec_frame.payload == GbnConfig.FILE_END_FLAG:
+                    ack_dict.pop(rec_frame.src_mac_addr)
             # 若为确认帧
             else:
                 with ack_get_dict_lock:
