@@ -2,27 +2,36 @@ import errno
 import queue
 
 from GbnTool import socket, threading
+from GbnTool.AddrTool import MACAddress
+from GbnTool.ConfigTool import GbnConfig
 from GbnTool.ErrorTool import CRCError
-from GbnTool.FileTool import FileWriter
-from GbnTool.FrameTool import GbnFrame
-from GbnTool.configTool import GbnConfig
+from GbnTool.FileTool import FileWriter, FileReader
+from GbnTool.FrameTool import AckFrame, GbnFrame, FrameFactory, GbnWindows
 
-wait_queue = queue.Queue()
+# 存储接收线程接收到的ack包，交给发送线程移动窗口
+ack_get_dict = {}
+ack_get_dict_lock = threading.Lock()
 
 
 class UDPCommunication:
-    def __init__(self, bind_addr=None):
+    def __init__(self, bind_port=None):
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        if bind_addr:
-            self.udp_socket.bind(("", bind_addr))
+        if bind_port:
+            self.udp_socket.bind(("", bind_port))
         self.udp_socket.setblocking(False)
+        self.dest_addr = None
+        self.dest_port = None
+
+    def set_dest(self, dest_addr: str, dest_port: int):
+        self.dest_addr = dest_addr
+        self.dest_port = dest_port
 
     @classmethod
     def bind(cls, bind_addr=None):
         return cls(bind_addr)
 
-    def send(self, send_data: bytes, dest_addr: str, dest_port: int):
-        self.udp_socket.sendto(send_data, (dest_addr, dest_port))
+    def send(self, send_data: bytes):
+        self.udp_socket.sendto(send_data, (self.dest_addr, self.dest_port))
 
     def receive(self, buf_size: int = (128 + GbnConfig.DATA_SIZE + GbnConfig.SEQ_BIT_SIZE * 2)):
         try:
@@ -65,33 +74,122 @@ class ReceiveThread(threading.Thread):
             rec_data, rec_addr = self.udp_handle.receive()
             if rec_addr is None and rec_data is None:
                 continue
+            # 检查CRC纠错码
             try:
-                rec_frame = GbnFrame.from_bytes(rec_data)
+                print(rec_data)
+                rec_frame = FrameFactory.from_bytes(rec_data)
             except CRCError:
                 continue
+
+            # 若非发给本机的包，跳过
             if rec_frame.dst_mac_addr != GbnConfig.MAC_ADDRESS:
                 continue
-            if rec_frame.src_mac_addr not in ack_dict:
-                ack_dict[rec_frame.src_mac_addr] = GbnConfig.INIT_SEQ_NO
-            if rec_frame.seq_num == ack_dict[rec_frame.src_mac_addr]:
-                ack_dict[rec_frame.src_mac_addr] = (ack_dict[rec_frame.src_mac_addr] + 1) % (GbnConfig.SW_SIZE + 1)
-                wait_queue.put((rec_frame.src_mac, rec_frame.seq_num))
-                result = write_handle.write(rec_frame.payload)
-                if result:
-                    write_handle.reset()
+            # 若为数据帧
+            if rec_frame.DATA_FRAME:
+                # 若第一次接收包，登记入接收map中
+                if rec_frame.src_mac_addr not in ack_dict:
+                    ack_dict[rec_frame.src_mac_addr] = GbnConfig.INIT_SEQ_NO
+                # 若接收到的包与要接收的序号相同
+                if rec_frame.seq_num == ack_dict[rec_frame.src_mac_addr]:
+                    print(rec_frame.seq_num)
+                    ack_dict[rec_frame.src_mac_addr] = (ack_dict[rec_frame.src_mac_addr] + 1) % (GbnConfig.SW_SIZE + 1)
+                    result = write_handle.write(rec_frame.payload)
+                    ack_frame = AckFrame(src_mac=GbnConfig.MAC_ADDRESS, dst_mac=rec_frame.src_mac_addr,
+                                         ack_num=rec_frame.seq_num)
+                    # 发送确认帧
+                    self.udp_handle.send(ack_frame.frame_bytes)
+
+            # 若为确认帧
+            else:
+                with ack_get_dict_lock:
+                    ack_get_dict[rec_frame.src_mac_addr] = rec_frame.seq_num
+
         print('Thread stopped')
 
 
 class SendThread:
     def __init__(self, udp_handle: UDPCommunication):
+        self.window = None
+        self.ack_send_dict = None
         self.udp_handle = udp_handle
         self.rec_thread = ReceiveThread(udp_handle)
 
     def run(self) -> int:
         self.rec_thread.start()
         while True:
+            with ack_get_dict_lock:
+                ack_get_dict.clear()
             message = input("[INPUT] Please input the destination MAC address , or input 0 to exit:")
             if message == '0':
                 self.rec_thread.stop()
                 self.rec_thread.join()
                 return 0
+            try:
+                dst_mac = MACAddress.from_str(message)
+            except ValueError:
+                print("[WARNING] Invalid Mac Address")
+                continue
+            self.window = GbnWindows(dst_mac)
+
+            message = input("[INPUT] Please input the file to send , or input 0 to exit:")
+            if message == '0':
+                self.rec_thread.stop()
+                self.rec_thread.join()
+                return 0
+            try:
+                file_handle = FileReader(message)
+            except FileNotFoundError:
+                print("[WARNING] Invalid File Name.")
+                continue
+            self.window.bind_file(file_handle)
+            seq = self.window.begin_point
+
+            while not self.window.if_end:
+                # 判断ack表，移动窗口
+                with ack_get_dict_lock:
+                    ack_get = ack_get_dict.copy()
+                for key, value in ack_get.items():
+                    if key == dst_mac:
+                        self.window.slide(value)
+                        with ack_get_dict_lock:
+                            ack_get_dict.pop(key)
+                # 超时
+                if not self.window.check():
+                    seq = self.window.begin_point
+                if seq == self.window.unused_point:
+                    continue
+                # 发送数据帧
+                if self.window.get_data(seq) != b"":
+                    print(self.window.get_data(seq))
+                    self.udp_handle.send(self.window.get_data(seq))
+                    self.window.start_timing(seq)
+                    seq = (seq + 1) % (GbnConfig.SW_SIZE + 1)
+
+            print("_______________")
+            tmp_end_flag = False
+            while True:
+                with ack_get_dict_lock:
+                    ack_get = ack_get_dict.copy()
+                for key, value in ack_get.items():
+                    if key == dst_mac:
+                        if value == (self.window.file_end_point + GbnConfig.SW_SIZE) % (GbnConfig.SW_SIZE + 1):
+                            tmp_end_flag = True
+                            break
+                        self.window.slide(value)
+                        with ack_get_dict_lock:
+                            ack_get_dict.pop(key)
+                if tmp_end_flag:
+                    break
+                # 超时
+                if not self.window.check():
+                    seq = self.window.begin_point
+                if seq == self.window.unused_point:
+                    continue
+                # 发送数据帧
+
+                # TODO:
+                if self.window.get_data(seq) != b"":
+                    print(self.window.get_data(seq))
+                    self.udp_handle.send(self.window.get_data(seq))
+                    self.window.start_timing(seq)
+                    seq = (seq + 1) % (GbnConfig.SW_SIZE + 1)

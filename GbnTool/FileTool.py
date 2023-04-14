@@ -1,5 +1,5 @@
 from GbnTool import os, math
-from GbnTool.configTool import GbnConfig
+from GbnTool.ConfigTool import GbnConfig
 
 
 # 文件读写工具
@@ -21,14 +21,14 @@ class FileReader:
     def __iter__(self):
         return self
 
-    def __next__(self) -> bytes:
+    def __next__(self) -> bytes | None:
         if self.name_point < len(self.file_path_list):
             # 返回文件名
             self.name_point += 1
             return self.file_path_list[self.name_point - 1]
         elif self.end_flag:
             # 终止迭代
-            raise StopIteration
+            return None
         elif self.read_size >= self.file_size:
             # 返回结束标志
             self.file.close()
@@ -37,6 +37,8 @@ class FileReader:
         else:
             data = self.file.read(GbnConfig.DATA_SIZE - 1)
             self.read_size += len(data)
+            # TODO:
+            print(data)
             return GbnConfig.FILE_DATA_FLAG + data
 
     def __del__(self):
@@ -53,7 +55,7 @@ class FileWriter:
         self.file = None
         self.if_open = False
 
-    def write(self, data: bytes) -> bool:
+    def write(self, data: bytes) -> int:
         if data[0] == int.from_bytes(GbnConfig.FILE_NAME_FLAG, "big"):
             self.file_path_list.append(data[1:].decode())
         if (not self.if_open) and data[0] != int.from_bytes(GbnConfig.FILE_NAME_FLAG, "big"):
@@ -65,8 +67,12 @@ class FileWriter:
             self.file.write(data[1:])
         elif data[0] == int.from_bytes(GbnConfig.FILE_END_FLAG, "big"):
             self.file.close()
-            return True
-        return False
+            print(f"[INFO]file:{self.file_path} receive over!\n")
+            self.reset()
+            return 1
+        elif data[0] == int.from_bytes(GbnConfig.FILE_NONE_FLAG, "big"):
+            return -1
+        return 0
 
     def reset(self):
         self.file_path = None

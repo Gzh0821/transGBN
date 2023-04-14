@@ -19,8 +19,11 @@ class GbnConfig:
     FILE_NAME_FLAG = b'\x81'
     FILE_DATA_FLAG = b'\x99'
     FILE_END_FLAG = b'\xbd'
-    DATA_SIZE = SW_SIZE = SEQ_BIT_SIZE = INIT_SEQ_NO = None
-    START_FLAG = b'\xab'  # 帧的起始标志
+    FILE_NONE_FLAG = b'\xcd'
+    DATA_SIZE = SW_SIZE = SEQ_BIT_SIZE = INIT_SEQ_NO = NO_ACK_NO = None
+    START_FLAG = b'\xab'  # 数据帧的起始标志
+    ACK_FLAG = b'\xd4'  # 确认帧的起始标志
+    TIME_OUT = None
     MAC_ADDRESS: MACAddress = None
 
     @staticmethod
@@ -50,6 +53,12 @@ class GbnConfig:
             raise ValueError("InitSeqNo must in (1,255)")
         print("[INFO] GbnConfig finish config.ini...")
 
-        # 生成随机MAC地址
+        # 不确认帧的ack_num值
+        GbnConfig.NO_ACK_NO = (GbnConfig.INIT_SEQ_NO + GbnConfig.SW_SIZE) % (GbnConfig.SW_SIZE + 1)
+
+        # MAC地址
         GbnConfig.MAC_ADDRESS = MACAddress.from_str(_gbn_config.get("Trans", "LocalMac"))
         print(f"[INFO] Your MAC Address:{GbnConfig.MAC_ADDRESS.mac_str}")
+
+        # 超时时间
+        GbnConfig.TIME_OUT = _gbn_config.getint("Trans", "Timeout")

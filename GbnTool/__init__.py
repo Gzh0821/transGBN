@@ -8,6 +8,7 @@ import socket
 import itertools
 import threading
 import random
-from GbnTool.configTool import GbnConfig
+from GbnTool.ConfigTool import GbnConfig
+
 
 GbnConfig.init()
