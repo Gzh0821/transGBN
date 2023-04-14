@@ -67,7 +67,7 @@ class FileWriter:
             self.file.write(data[1:])
         elif data[0] == int.from_bytes(GbnConfig.FILE_END_FLAG, "big"):
             self.file.close()
-            print(f"[INFO]file:{self.file_path} receive over!\n")
+            print(f"[INFO] file:{self.file_path} receive over!\n")
             self.reset()
             return 1
         elif data[0] == int.from_bytes(GbnConfig.FILE_NONE_FLAG, "big"):

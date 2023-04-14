@@ -90,7 +90,7 @@ class GbnWindows:
     def __init__(self, dst_mac: MACAddress) -> None:
         self.src_mac = GbnConfig.MAC_ADDRESS
         self.dst_mac = dst_mac
-        self.windows_list = [{"time": 0.0, "data": b""} for i in range(0, GbnConfig.SW_SIZE + 1)]
+        self.windows_list = [{"time": 0.0, "data": b"", "type": "New"} for i in range(0, GbnConfig.SW_SIZE + 1)]
         self.unused_point = (GbnConfig.INIT_SEQ_NO + GbnConfig.SW_SIZE) % (GbnConfig.SW_SIZE + 1)
         self.file_handle = None
         self.if_end = False
@@ -103,10 +103,12 @@ class GbnWindows:
             payload = next(self.file_handle)
             if payload is not None:
                 self.windows_list[seq]["data"] = GbnFrame(self.src_mac, self.dst_mac, seq, payload).frame_bytes
+                self.windows_list[seq]["Type"] = "New"
             else:
                 self.file_end_point = seq
                 self.if_end = True
                 self.windows_list[seq]["data"] = b""
+                self.windows_list[seq]["Type"] = "None"
                 break
             seq = (seq + 1) % (GbnConfig.SW_SIZE + 1)
 
@@ -118,10 +120,12 @@ class GbnWindows:
             if payload is not None:
                 self.windows_list[tmp_point]["data"] = GbnFrame(self.src_mac, self.dst_mac, tmp_point,
                                                                 payload).frame_bytes
+                self.windows_list[tmp_point]["Type"] = "New"
             else:
                 self.if_end = True
                 self.file_end_point = tmp_point
                 self.windows_list[tmp_point]["data"] = b""
+                self.windows_list[tmp_point]["Type"] = "None"
                 break
             tmp_point = (tmp_point + 1) % (GbnConfig.SW_SIZE + 1)
         self.windows_list[tmp_point]["time"] = 0.0
@@ -143,6 +147,12 @@ class GbnWindows:
 
     def get_data(self, point: int):
         return self.windows_list[point]["data"]
+
+    def get_status(self, point: int):
+        return self.windows_list[point]["Type"]
+
+    def set_status(self, point: int, status: str = "TO"):
+        self.windows_list[point]["Type"] = status
 
     def __len__(self):
         return GbnConfig.SW_SIZE

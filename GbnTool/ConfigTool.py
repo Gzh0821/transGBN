@@ -1,5 +1,6 @@
 from GbnTool import configparser, math, random
 from GbnTool.AddrTool import MACAddress
+from GbnTool.LogTool import GbnLog
 
 
 # 全局配置工具
@@ -25,6 +26,9 @@ class GbnConfig:
     ACK_FLAG = b'\xd4'  # 确认帧的起始标志
     TIME_OUT = None
     MAC_ADDRESS: MACAddress = None
+    DEST_IP = ""
+    DEST_PORT = 0
+    UDP_PORT = ""
 
     @staticmethod
     def init(config_path: str = "config.ini"):
@@ -58,7 +62,21 @@ class GbnConfig:
 
         # MAC地址
         GbnConfig.MAC_ADDRESS = MACAddress.from_str(_gbn_config.get("Trans", "LocalMac"))
-        print(f"[INFO] Your MAC Address:{GbnConfig.MAC_ADDRESS.mac_str}")
+        print(f"[INFO] Your Virtual MAC Address: {GbnConfig.MAC_ADDRESS.mac_str}.")
 
         # 超时时间
         GbnConfig.TIME_OUT = _gbn_config.getint("Trans", "Timeout")
+
+        # 模拟时本地的端口
+        GbnConfig.UDP_PORT = _gbn_config.getint("Trans", "UDPPort")
+
+        # 模拟时目的地的端口
+        GbnConfig.DEST_PORT = _gbn_config.getint("Client", "DestPort")
+
+        # 模拟时目的地的IP地址
+        GbnConfig.DEST_IP = _gbn_config.get("Client", "DestIP")
+
+        # 初始化日志
+        GbnLog.init(_gbn_config.get("Log", "SendLogName"),
+                    _gbn_config.get("Log", "ReceiveLogName"),
+                    _gbn_config.getboolean("Log", "Show"))
