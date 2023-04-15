@@ -36,7 +36,7 @@ class GbnFrame:
 
         # 计算CRC校验码
         crc_func = crcmod.predefined.mkCrcFun('crc-ccitt-false')
-        crc = crc_func(src_mac + dst_mac + seq_bytes + payload_bytes)
+        crc = crc_func(self.START_FLAG + src_mac + dst_mac + seq_bytes + payload_bytes)
         checksum = crc.to_bytes(2, byteorder='big')
         # 将源MAC地址、目的MAC地址、序列号、确认号、数据、校验和合并成一个字节串，并在开头加上起始标志
         return self.START_FLAG + src_mac + dst_mac + seq_bytes + payload_bytes + checksum
@@ -70,7 +70,7 @@ class FrameFactory:
                 GbnConfig.ACK_FLAG, byteorder='big'):
             raise ValueError('Invalid frame format')
         crc_func = crcmod.predefined.mkCrcFun('crc-ccitt-false')
-        computed_crc = crc_func(frame_bytes[1:-2])
+        computed_crc = crc_func(frame_bytes[0:-2])
         checksum = int.from_bytes(frame_bytes[-2:], byteorder='big')
         if computed_crc != checksum:
             raise CRCError('CRC error', frame_bytes, computed_crc, checksum)

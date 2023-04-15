@@ -47,6 +47,9 @@ class UDPCommunication:
             self.receive_count += 1
             return rec_data, rec_addr
 
+    def clear_receive_count(self):
+        self.receive_count = 0
+        
     def close(self):
         self.udp_socket.close()
 
@@ -100,8 +103,12 @@ class ReceiveThread(threading.Thread):
                 if rec_frame.seq_num == ack_dict[rec_frame.src_mac_addr]:
                     print(rec_frame.seq_num)
                     ack_dict[rec_frame.src_mac_addr] = (ack_dict[rec_frame.src_mac_addr] + 1) % (GbnConfig.SW_SIZE + 1)
-                    result = write_handle.write(rec_frame.payload)
-                    GbnLog.receive_log(self.udp_handle.receive_count, rec_frame.seq_num, rec_frame.seq_num)
+                    result,finish_flag = write_handle.write(rec_frame.payload)
+                    GbnLog.receive_log(self.udp_handle.receive_count, rec_frame.seq_num, rec_frame.seq_num,pdu_count=result)
+                    if finish_flag is not None:
+                        print(f"[INFO] file:{finish_flag} receive over!\n")
+                        GbnLog.receive_done(self.udp_handle.receive_count,result,finish_flag,rec_frame.src_mac_addr)
+                        self.udp_handle.clear_receive_count()
                     ack_frame = AckFrame(src_mac=GbnConfig.MAC_ADDRESS, dst_mac=rec_frame.src_mac_addr,
                                          ack_num=rec_frame.seq_num)
                     # 发送确认帧

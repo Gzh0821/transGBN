@@ -1,5 +1,5 @@
 from GbnTool import logging
-
+from GbnTool.AddrTool import MACAddress
 
 class GbnLog:
     _send_logger = logging.getLogger('SendLogger')
@@ -39,10 +39,13 @@ class GbnLog:
                                         extra={"net_type": "Send"})
 
     @staticmethod
-    def receive_log(num: int, pdu_exp: int, pdu_recv: int, status: str = "OK", net_type: str = "Receive"):
+    def receive_log(num: int, pdu_exp: int, pdu_recv: int, status: str = "OK", net_type: str = "Receive",pdu_count = -1):
         if status == "OK":
-            GbnLog._receive_logger.info(f"(No:{num})(pdu_exp:{pdu_exp})(status:{status})(pdu_recv:{pdu_recv})",
+            GbnLog._receive_logger.info(f"(No:{num})(pdu_exp:{pdu_exp})(status:{status})(pdu_recv:{pdu_recv})(pdu_count:{pdu_count})",
                                         extra={"net_type": net_type})
         else:
             GbnLog._receive_logger.error(f"(No:{num})(pdu_exp:{pdu_exp})(status:{status})(pdu_recv:{pdu_recv})",
                                          extra={"net_type": net_type})
+    def receive_done(num:int,pdu_count:int,file_name:str,mac_addr:MACAddress):
+        GbnLog._receive_logger.info(f"(FileName:{file_name})(SrcMac:{str(mac_addr)})(TotalNo:{num})(TotalPduCount:{pdu_count})",
+                                        extra={"net_type": "ReceiveDone"})
