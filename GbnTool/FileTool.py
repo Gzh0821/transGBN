@@ -37,8 +37,7 @@ class FileReader:
         else:
             data = self.file.read(GbnConfig.DATA_SIZE - 1)
             self.read_size += len(data)
-            # TODO:
-            print(data)
+            # print(data)
             return GbnConfig.FILE_DATA_FLAG + data
 
     def __del__(self):

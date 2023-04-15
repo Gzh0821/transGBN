@@ -1,4 +1,4 @@
-from GbnTool import crcmod, time
+from GbnTool import crcmod, time, tqdm, math
 from GbnTool.AddrTool import MACAddress
 from GbnTool.ConfigTool import GbnConfig
 from GbnTool.ErrorTool import CRCError
@@ -93,15 +93,26 @@ class GbnWindows:
         self.file_handle = None
         self.if_end = False
         self.file_end_point = -1
+        self.pbar = None
+        self.batch_size = 0
 
     def bind_file(self, file_handle: FileReader):
         self.file_handle = file_handle
+        # self.pbar = tqdm.tqdm(
+        #     total=len(file_handle.file_path_list) + math.ceil(file_handle.file_size / (GbnConfig.DATA_SIZE - 1)),
+        #     desc='Processing',
+        #     unit='BUF')
+        self.pbar = tqdm.tqdm(total=len(file_handle.file_path) + file_handle.file_size,
+                              desc='Processing',
+                              unit='Bytes')
+        self.batch_size = GbnConfig.DATA_SIZE - 1
         seq = GbnConfig.INIT_SEQ_NO
         while seq != self.unused_point:
             payload = next(self.file_handle)
             if payload is not None:
                 self.windows_list[seq]["data"] = GbnFrame(self.src_mac, self.dst_mac, seq, payload).frame_bytes
                 self.windows_list[seq]["Type"] = "New"
+                self.pbar.update(len(payload))
             else:
                 self.file_end_point = seq
                 self.if_end = True
@@ -117,6 +128,7 @@ class GbnWindows:
                 self.windows_list[tmp_point]["data"] = GbnFrame(self.src_mac, self.dst_mac, tmp_point,
                                                                 payload).frame_bytes
                 self.windows_list[tmp_point]["Type"] = "New"
+                self.pbar.update(len(payload))
             else:
                 self.if_end = True
                 self.file_end_point = tmp_point
@@ -152,3 +164,7 @@ class GbnWindows:
 
     def __len__(self):
         return GbnConfig.SW_SIZE
+
+    def close_pbar(self):
+        if self.pbar is not None:
+            self.pbar.close()

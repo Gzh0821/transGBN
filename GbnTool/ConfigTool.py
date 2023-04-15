@@ -1,6 +1,7 @@
 from GbnTool import configparser, math, random
 from GbnTool.AddrTool import MACAddress
 from GbnTool.LogTool import GbnLog
+from GbnTool.RandomTool import GbnRandom
 
 
 # 全局配置工具
@@ -24,11 +25,14 @@ class GbnConfig:
     DATA_SIZE = SW_SIZE = SEQ_BIT_SIZE = INIT_SEQ_NO = NO_ACK_NO = None
     START_FLAG = b'\xab'  # 数据帧的起始标志
     ACK_FLAG = b'\xd4'  # 确认帧的起始标志
+    SYNC_FLAG = b'\x96'
     TIME_OUT = None
     MAC_ADDRESS: MACAddress = None
     DEST_IP = ""
     DEST_PORT = 0
     UDP_PORT = ""
+    ERROR_RATE = 0
+    LOST_RATE = 0
 
     @staticmethod
     def init(config_path: str = "config.ini"):
@@ -80,3 +84,8 @@ class GbnConfig:
         GbnLog.init(_gbn_config.get("Log", "SendLogName"),
                     _gbn_config.get("Log", "ReceiveLogName"),
                     _gbn_config.getboolean("Log", "Show"))
+
+        GbnConfig.ERROR_RATE = _gbn_config.getint("Random", "ErrorRate")
+        GbnConfig.LOST_RATE = _gbn_config.getint("Random", "LostRate")
+
+        GbnRandom.init(GbnConfig.ERROR_RATE, GbnConfig.LOST_RATE)
