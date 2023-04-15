@@ -173,7 +173,7 @@ class SendThread:
                 if seq == self.window.unused_point:
                     continue
                 # 发送数据帧
-                if self.window.get_data(seq) != b"":
+                if not self.window.if_end or seq != self.window.file_end_point:
                     print(self.window.get_data(seq))
                     self.udp_handle.send(self.window.get_data(seq))
                     GbnLog.send_log(self.udp_handle.send_count, seq,
@@ -206,7 +206,7 @@ class SendThread:
                 # 发送数据帧
 
                 # TODO:
-                if self.window.get_data(seq) != b"":
+                if not self.window.if_end or seq != self.window.file_end_point:
                     print(self.window.get_data(seq))
                     self.udp_handle.send(self.window.get_data(seq))
                     GbnLog.send_log(self.udp_handle.send_count, seq,

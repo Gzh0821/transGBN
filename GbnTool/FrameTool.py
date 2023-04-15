@@ -105,8 +105,6 @@ class GbnWindows:
             else:
                 self.file_end_point = seq
                 self.if_end = True
-                self.windows_list[seq]["data"] = b""
-                self.windows_list[seq]["Type"] = "None"
                 break
             seq = (seq + 1) % (GbnConfig.SW_SIZE + 1)
 
