@@ -33,12 +33,15 @@ class UDPCommunication:
     def bind(cls, bind_addr=None):
         return cls(bind_addr)
 
-    def send(self, send_data: bytes, error: bool = True):
+    def send(self, send_data: bytes, error: bool = True, ack: bool = False):
         if error:
+            # 依据概率参数随机产生位错误
             data = GbnRandom.random_error(send_data)
             if GbnRandom.keep():
+                # 依据概率参数模拟送达或丢失
                 self.udp_socket.sendto(data, (self.dest_addr, self.dest_port))
-            self.send_count += 1
+            if not ack:
+                self.send_count += 1
         else:
             self.udp_socket.sendto(send_data, (self.dest_addr, self.dest_port))
 
@@ -53,6 +56,9 @@ class UDPCommunication:
             if rec_data[0] != GbnConfig.SYNC_FLAG[0]:
                 self.receive_count += 1
             return rec_data, rec_addr
+
+    def clear_send_count(self):
+        self.send_count = 0
 
     def clear_receive_count(self):
         self.receive_count = 0
@@ -95,6 +101,7 @@ class ReceiveThread(threading.Thread):
                 if dst == GbnConfig.MAC_ADDRESS and src in ack_dict:
                     ack_dict.pop(src)
                     print("[WARNING] Clear SEQ Number.")
+                continue
             # 检查CRC纠错码
             try:
                 # print(rec_data)
@@ -126,14 +133,14 @@ class ReceiveThread(threading.Thread):
                     ack_frame = AckFrame(src_mac=GbnConfig.MAC_ADDRESS, dst_mac=rec_frame.src_mac_addr,
                                          ack_num=rec_frame.seq_num)
                     # 发送确认帧
-                    self.udp_handle.send(ack_frame.frame_bytes)
+                    self.udp_handle.send(ack_frame.frame_bytes, ack = True)
                 else:
                     GbnLog.receive_log(self.udp_handle.receive_count, ack_dict[rec_frame.src_mac_addr],
                                        rec_frame.seq_num, "NoErr")
                     ack_frame = AckFrame(src_mac=GbnConfig.MAC_ADDRESS, dst_mac=rec_frame.src_mac_addr,
                                          ack_num=(ack_dict[rec_frame.src_mac_addr] + GbnConfig.SW_SIZE) % (
                                                  GbnConfig.SW_SIZE + 1))
-                    self.udp_handle.send(ack_frame.frame_bytes)
+                    self.udp_handle.send(ack_frame.frame_bytes, ack = True)
                     continue
                 # if rec_frame.payload == GbnConfig.FILE_END_FLAG:
                 #     ack_dict.pop(rec_frame.src_mac_addr)
@@ -193,7 +200,12 @@ class SendThread:
                     ack_get = ack_get_dict.copy()
                 for key, value in ack_get.items():
                     if key == dst_mac:
+                        dis_1 = (seq + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
+                        dis_2 = (value + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
                         self.window.slide(value)
+                        # 若窗口滑动前seq在窗口中位置比ack靠前，则将seq置ack后一窗口位置
+                        if dis_1 <= dis_2:
+                            seq = self.window.begin_point
                         with ack_get_dict_lock:
                             ack_get_dict.pop(key)
                 # 超时
@@ -219,10 +231,14 @@ class SendThread:
                 for key, value in ack_get.items():
                     if key == dst_mac:
                         if value == (self.window.file_end_point + GbnConfig.SW_SIZE) % (GbnConfig.SW_SIZE + 1):
-                            print(f"[INFO] File:{message} Send Finish!")
                             tmp_end_flag = True
                             break
+                        dis_1 = (seq + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
+                        dis_2 = (value + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
                         self.window.slide(value)
+                        # 若窗口滑动前seq在窗口中位置比ack靠前，则将seq置ack后一窗口位置
+                        if dis_1 <= dis_2:
+                            seq = self.window.begin_point
                         with ack_get_dict_lock:
                             ack_get_dict.pop(key)
                 if tmp_end_flag:
@@ -235,7 +251,7 @@ class SendThread:
                 # 发送数据帧
 
                 # TODO:
-                if not self.window.if_end or seq != self.window.file_end_point:
+                if seq != self.window.file_end_point:
                     # print(self.window.get_data(seq))
                     self.udp_handle.send(self.window.get_data(seq))
                     GbnLog.send_log(self.udp_handle.send_count, seq,
@@ -244,3 +260,5 @@ class SendThread:
                     self.window.start_timing(seq)
                     seq = (seq + 1) % (GbnConfig.SW_SIZE + 1)
             self.window.close_pbar()
+            self.udp_handle.clear_send_count()
+            print(f"[INFO] File:{message} Send Finish!")

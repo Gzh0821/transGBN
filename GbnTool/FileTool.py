@@ -21,7 +21,7 @@ class FileReader:
     def __iter__(self):
         return self
 
-    def __next__(self) -> bytes | None:
+    def __next__(self):
         if self.name_point < len(self.file_path_list):
             # 返回文件名
             self.name_point += 1

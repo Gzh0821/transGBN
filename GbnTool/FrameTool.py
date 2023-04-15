@@ -66,14 +66,15 @@ class FrameFactory:
     def from_bytes(frame_bytes: bytes):
         flag = frame_bytes[0]
         # 从二进制格式的字节串中解析出序列号、确认号、数据和CRC校验码
-        if flag != int.from_bytes(GbnConfig.START_FLAG, byteorder='big') and flag != int.from_bytes(
-                GbnConfig.ACK_FLAG, byteorder='big'):
-            raise ValueError('Invalid frame format')
         crc_func = crcmod.predefined.mkCrcFun('crc-ccitt-false')
         computed_crc = crc_func(frame_bytes[0:-2])
         checksum = int.from_bytes(frame_bytes[-2:], byteorder='big')
         if computed_crc != checksum:
             raise CRCError('CRC error', frame_bytes, computed_crc, checksum)
+        if flag != int.from_bytes(GbnConfig.START_FLAG, byteorder='big') and flag != int.from_bytes(
+                GbnConfig.ACK_FLAG, byteorder='big'):
+            raise ValueError('Invalid frame format')
+
         src_mac = MACAddress.from_bytes(frame_bytes[1:7])
         dst_mac = MACAddress.from_bytes(frame_bytes[7:13])
         seq_num = int.from_bytes(frame_bytes[13:13 + GbnConfig.SEQ_BIT_SIZE], byteorder='big')
@@ -94,6 +95,7 @@ class GbnWindows:
         self.if_end = False
         self.file_end_point = -1
         self.pbar = None
+        self.total_byte = 0
         self.batch_size = 0
 
     def bind_file(self, file_handle: FileReader):
@@ -102,7 +104,8 @@ class GbnWindows:
         #     total=len(file_handle.file_path_list) + math.ceil(file_handle.file_size / (GbnConfig.DATA_SIZE - 1)),
         #     desc='Processing',
         #     unit='BUF')
-        self.pbar = tqdm.tqdm(total=len(file_handle.file_path) + file_handle.file_size,
+        self.total_byte = len(file_handle.file_path) + file_handle.file_size
+        self.pbar = tqdm.tqdm(total=self.total_byte,
                               desc='Processing',
                               unit='Bytes')
         self.batch_size = GbnConfig.DATA_SIZE - 1
@@ -112,7 +115,7 @@ class GbnWindows:
             if payload is not None:
                 self.windows_list[seq]["data"] = GbnFrame(self.src_mac, self.dst_mac, seq, payload).frame_bytes
                 self.windows_list[seq]["Type"] = "New"
-                self.pbar.update(len(payload))
+                self.pbar.update(len(payload)-1)
             else:
                 self.file_end_point = seq
                 self.if_end = True
@@ -128,7 +131,7 @@ class GbnWindows:
                 self.windows_list[tmp_point]["data"] = GbnFrame(self.src_mac, self.dst_mac, tmp_point,
                                                                 payload).frame_bytes
                 self.windows_list[tmp_point]["Type"] = "New"
-                self.pbar.update(len(payload))
+                self.pbar.update(len(payload)-1)
             else:
                 self.if_end = True
                 self.file_end_point = tmp_point
@@ -167,4 +170,5 @@ class GbnWindows:
 
     def close_pbar(self):
         if self.pbar is not None:
+            self.pbar.update(0)
             self.pbar.close()
