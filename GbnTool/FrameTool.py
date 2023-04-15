@@ -88,7 +88,7 @@ class GbnWindows:
     def __init__(self, dst_mac: MACAddress) -> None:
         self.src_mac = GbnConfig.MAC_ADDRESS
         self.dst_mac = dst_mac
-        self.windows_list = [{"time": 0.0, "data": b"", "type": "New"} for i in range(0, GbnConfig.SW_SIZE + 1)]
+        self.windows_list = [{"time": 0.0, "data": b"", "type": "New"} for _ in range(0, GbnConfig.SW_SIZE + 1)]
         self.unused_point = (GbnConfig.INIT_SEQ_NO + GbnConfig.SW_SIZE) % (GbnConfig.SW_SIZE + 1)
         self.file_handle = None
         self.if_end = False
