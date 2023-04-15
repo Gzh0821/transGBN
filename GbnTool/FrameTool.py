@@ -148,7 +148,8 @@ class GbnWindows:
             if payload is not None:
                 self.windows_list[seq]["data"] = GbnFrame(self.src_mac, self.dst_mac, seq, payload).frame_bytes
                 self.windows_list[seq]["Type"] = "New"
-                self.pbar.update(len(payload) - 1)
+                with GbnConfig.print_lock:
+                    self.pbar.update(len(payload) - 1)
             else:
                 self.file_end_point = seq
                 self.if_end = True
@@ -169,7 +170,8 @@ class GbnWindows:
                 self.windows_list[tmp_point]["data"] = GbnFrame(self.src_mac, self.dst_mac, tmp_point,
                                                                 payload).frame_bytes
                 self.windows_list[tmp_point]["Type"] = "New"
-                self.pbar.update(len(payload) - 1)
+                with GbnConfig.print_lock:
+                    self.pbar.update(len(payload) - 1)
             else:
                 self.if_end = True
                 self.file_end_point = tmp_point
@@ -241,5 +243,6 @@ class GbnWindows:
         :return:
         """
         if self.pbar is not None:
-            self.pbar.update(0)
+            with GbnConfig.print_lock:
+                self.pbar.update(0)
             self.pbar.close()

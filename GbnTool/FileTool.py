@@ -55,11 +55,11 @@ class FileReader:
         else:
             data = self.file.read(GbnConfig.DATA_SIZE - 1)
             self.read_size += len(data)
-            # print(data)
             return GbnConfig.FILE_DATA_FLAG + data
 
     def __del__(self):
-        self.file.close()
+        if hasattr(self, "file"):
+            self.file.close()
 
     def __len__(self):
         return len(self.file_path_list) + math.ceil(self.file_size / (GbnConfig.DATA_SIZE - 1)) + 1

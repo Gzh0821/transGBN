@@ -12,7 +12,7 @@
 #     See the License for the specific language governing permissions and
 #     limitations under the License.
 
-from GbnTool import configparser, math, random
+from GbnTool import configparser, math, random, threading
 from GbnTool.AddrTool import MACAddress
 from GbnTool.LogTool import GbnLog
 from GbnTool.RandomTool import GbnRandom
@@ -47,6 +47,13 @@ class GbnConfig:
     UDP_PORT = ""
     ERROR_RATE = 0
     LOST_RATE = 0
+    DEST_MAC: MACAddress = None
+    print_lock = threading.Lock()
+
+    @staticmethod
+    def print(msg):
+        with GbnConfig.print_lock:
+            print(msg)
 
     @staticmethod
     def init(config_path: str = "config.ini"):
@@ -56,7 +63,7 @@ class GbnConfig:
         :return:
         """
         _gbn_config = configparser.ConfigParser()
-        print("[INFO] GbnConfig reading config.ini...")
+        GbnConfig.print("[INFO] GbnConfig reading config.ini...")
         _gbn_config.read(config_path)
         if not _gbn_config.has_section("GbnFrame"):
             raise ValueError("GbnConfig config not found in config.ini")
@@ -78,14 +85,14 @@ class GbnConfig:
         GbnConfig.INIT_SEQ_NO = _gbn_config.getint("GbnFrame", "InitSeqNo")
         if GbnConfig.INIT_SEQ_NO not in range(0, 255):
             raise ValueError("InitSeqNo must in (1,255)")
-        print("[INFO] GbnConfig finish config.ini...")
+        GbnConfig.print("[INFO] GbnConfig finish config.ini...")
 
         # 不确认帧的ack_num值
         GbnConfig.NO_ACK_NO = (GbnConfig.INIT_SEQ_NO + GbnConfig.SW_SIZE) % (GbnConfig.SW_SIZE + 1)
 
         # MAC地址
         GbnConfig.MAC_ADDRESS = MACAddress.from_str(_gbn_config.get("Trans", "LocalMac"))
-        print(f"[INFO] Your Virtual MAC Address: {GbnConfig.MAC_ADDRESS.mac_str}.")
+        GbnConfig.print(f"[INFO] Your Virtual MAC Address: {GbnConfig.MAC_ADDRESS.mac_str}.")
 
         # 超时时间
         GbnConfig.TIME_OUT = _gbn_config.getint("Trans", "Timeout")
@@ -108,3 +115,6 @@ class GbnConfig:
         GbnConfig.LOST_RATE = _gbn_config.getint("Random", "LostRate")
 
         GbnRandom.init(GbnConfig.ERROR_RATE, GbnConfig.LOST_RATE)
+
+        if _gbn_config.has_section("Test"):
+            GbnConfig.DEST_MAC = MACAddress.from_str(_gbn_config.get("Test", "DestMac"))
