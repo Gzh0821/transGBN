@@ -1,3 +1,17 @@
+#   Copyright 2023 Gaozih/Gzh0821 https://github.com/Gzh0821
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+
 from GbnTool import socket, threading, errno
 from GbnTool.AddrTool import MACAddress
 from GbnTool.ConfigTool import GbnConfig
@@ -25,15 +39,33 @@ class UDPCommunication:
         self.receive_count = 0
 
     def set_dest(self, dest_addr: str, dest_port: int):
+        """
+        Set the destination IP and port.
+        :param dest_addr:
+        :param dest_port:
+        :return:
+        """
         self.dest_addr = dest_addr
         self.dest_port = dest_port
         print(f"[INFO] Destination IP: {dest_addr}:{dest_port}.")
 
     @classmethod
     def bind(cls, bind_addr=None):
+        """
+        Bind the UDP socket to a port.
+        :param bind_addr:
+        :return:
+        """
         return cls(bind_addr)
 
     def send(self, send_data: bytes, error: bool = True, ack: bool = False):
+        """
+        Send data to the destination.
+        :param send_data:
+        :param error:
+        :param ack:
+        :return:
+        """
         if error:
             # 依据概率参数随机产生位错误
             data = GbnRandom.random_error(send_data)
@@ -46,6 +78,11 @@ class UDPCommunication:
             self.udp_socket.sendto(send_data, (self.dest_addr, self.dest_port))
 
     def receive(self, buf_size: int = (128 + GbnConfig.DATA_SIZE + GbnConfig.SEQ_BIT_SIZE * 2)):
+        """
+        Receive data from the destination.
+        :param buf_size:
+        :return:
+        """
         try:
             rec_data, rec_addr = self.udp_socket.recvfrom(buf_size)
         except socket.error as e:
@@ -58,12 +95,24 @@ class UDPCommunication:
             return rec_data, rec_addr
 
     def clear_send_count(self):
+        """
+        Clear the send count.
+        :return:
+        """
         self.send_count = 0
 
     def clear_receive_count(self):
+        """
+        Clear the reception count.
+        :return:
+        """
         self.receive_count = 0
 
     def close(self):
+        """
+        Close the UDP socket.
+        :return:
+        """
         self.udp_socket.close()
 
     def __enter__(self):
@@ -80,14 +129,26 @@ class UDPCommunication:
 
 class ReceiveThread(threading.Thread):
     def __init__(self, udp_handle: UDPCommunication):
+        """
+        Initialize the reception thread.
+        :param udp_handle:
+        """
         super(ReceiveThread, self).__init__()
         self.udp_handle = udp_handle
         self._stop_event = threading.Event()
 
     def stop(self):
+        """
+        Stop the reception thread.
+        :return:
+        """
         self._stop_event.set()
 
     def run(self):
+        """
+        Run the reception thread.
+        :return:
+        """
         ack_dict = {}
         write_handle = FileWriter()
         print("[INFO] Receive Thread start listening...")
@@ -133,14 +194,14 @@ class ReceiveThread(threading.Thread):
                     ack_frame = AckFrame(src_mac=GbnConfig.MAC_ADDRESS, dst_mac=rec_frame.src_mac_addr,
                                          ack_num=rec_frame.seq_num)
                     # 发送确认帧
-                    self.udp_handle.send(ack_frame.frame_bytes, ack = True)
+                    self.udp_handle.send(ack_frame.frame_bytes, ack=True)
                 else:
                     GbnLog.receive_log(self.udp_handle.receive_count, ack_dict[rec_frame.src_mac_addr],
                                        rec_frame.seq_num, "NoErr")
                     ack_frame = AckFrame(src_mac=GbnConfig.MAC_ADDRESS, dst_mac=rec_frame.src_mac_addr,
                                          ack_num=(ack_dict[rec_frame.src_mac_addr] + GbnConfig.SW_SIZE) % (
                                                  GbnConfig.SW_SIZE + 1))
-                    self.udp_handle.send(ack_frame.frame_bytes, ack = True)
+                    self.udp_handle.send(ack_frame.frame_bytes, ack=True)
                     continue
                 # if rec_frame.payload == GbnConfig.FILE_END_FLAG:
                 #     ack_dict.pop(rec_frame.src_mac_addr)
@@ -155,12 +216,20 @@ class ReceiveThread(threading.Thread):
 
 class SendThread:
     def __init__(self, udp_handle: UDPCommunication):
+        """
+        Initialize the send thread.
+        :param udp_handle:
+        """
         self.window = None
         self.ack_send_dict = None
         self.udp_handle = udp_handle
         self.rec_thread = ReceiveThread(udp_handle)
 
     def run(self) -> int:
+        """
+        Run the send thread.
+        :return:
+        """
         self.rec_thread.start()
         while True:
             self.udp_handle.send_count = 0
