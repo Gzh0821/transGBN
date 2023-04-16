@@ -333,6 +333,7 @@ class SendThread:
                     self.window.set_status(seq)
                     self.window.start_timing(seq)
                     seq = (seq + 1) % (GbnConfig.SW_SIZE + 1)
+            GbnLog.send_done(self.udp_handle.send_count, self.window.send_count, file_handle.file_path, dst_mac)
             self.window.close_pbar()
             self.udp_handle.clear_send_count()
             GbnConfig.print(f"[INFO] File:{message} Send Finish!")

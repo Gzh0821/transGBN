@@ -69,6 +69,20 @@ class GbnLog:
                                         extra={"net_type": "Send"})
 
     @staticmethod
+    def send_done(num: int, pdu_count: int, file_name: str, mac_addr: MACAddress):
+        """
+        Log the reception done information.
+        :param num:
+        :param pdu_count:
+        :param file_name:
+        :param mac_addr:
+        :return:
+        """
+        GbnLog._send_logger.info(
+            f"(FileName:{file_name})(DstMac:{str(mac_addr)})(TotalNo:{num})(TotalPduCount:{pdu_count})",
+            extra={"net_type": "SendDone"})
+
+    @staticmethod
     def receive_log(num: int, pdu_exp: int, pdu_recv: int, status: str = "OK", net_type: str = "Receive", pdu_count=-1):
         """
         Log the reception information.

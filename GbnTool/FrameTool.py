@@ -122,6 +122,7 @@ class GbnWindows:
         self.file_handle = None
         self.if_end = False
         self.file_end_point = -1
+        self.send_count = 0
         self.pbar = None
         self.total_byte = 0
         self.batch_size = 0
@@ -145,6 +146,7 @@ class GbnWindows:
         seq = GbnConfig.INIT_SEQ_NO
         while seq != self.unused_point:
             payload = next(self.file_handle)
+            self.send_count += 1
             if payload is not None:
                 self.windows_list[seq]["data"] = GbnFrame(self.src_mac, self.dst_mac, seq, payload).frame_bytes
                 self.windows_list[seq]["Type"] = "New"
@@ -153,6 +155,7 @@ class GbnWindows:
             else:
                 self.file_end_point = seq
                 self.if_end = True
+                self.send_count -= 1
                 break
             seq = (seq + 1) % (GbnConfig.SW_SIZE + 1)
 
@@ -166,6 +169,7 @@ class GbnWindows:
         while tmp_point != ack_num and not self.if_end:
             self.windows_list[tmp_point]["time"] = 0.0
             payload = next(self.file_handle)
+            self.send_count += 1
             if payload is not None:
                 self.windows_list[tmp_point]["data"] = GbnFrame(self.src_mac, self.dst_mac, tmp_point,
                                                                 payload).frame_bytes
@@ -175,8 +179,7 @@ class GbnWindows:
             else:
                 self.if_end = True
                 self.file_end_point = tmp_point
-                self.windows_list[tmp_point]["data"] = b""
-                self.windows_list[tmp_point]["Type"] = "None"
+                self.send_count -= 1
                 break
             tmp_point = (tmp_point + 1) % (GbnConfig.SW_SIZE + 1)
         self.windows_list[tmp_point]["time"] = 0.0
