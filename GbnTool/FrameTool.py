@@ -149,7 +149,7 @@ class GbnWindows:
             self.send_count += 1
             if payload is not None:
                 self.windows_list[seq]["data"] = GbnFrame(self.src_mac, self.dst_mac, seq, payload).frame_bytes
-                self.windows_list[seq]["Type"] = "New"
+                self.windows_list[seq]["type"] = "New"
                 with GbnConfig.print_lock:
                     self.pbar.update(len(payload) - 1)
             else:
@@ -173,7 +173,7 @@ class GbnWindows:
             if payload is not None:
                 self.windows_list[tmp_point]["data"] = GbnFrame(self.src_mac, self.dst_mac, tmp_point,
                                                                 payload).frame_bytes
-                self.windows_list[tmp_point]["Type"] = "New"
+                self.windows_list[tmp_point]["type"] = "New"
                 with GbnConfig.print_lock:
                     self.pbar.update(len(payload) - 1)
             else:
@@ -226,7 +226,7 @@ class GbnWindows:
         :param point:
         :return:
         """
-        return self.windows_list[point]["Type"]
+        return self.windows_list[point]["type"]
 
     def set_status(self, point: int, status: str = "TO"):
         """
@@ -235,7 +235,7 @@ class GbnWindows:
         :param status: default is "TO"
         :return:
         """
-        self.windows_list[point]["Type"] = status
+        self.windows_list[point]["type"] = status
 
     def __len__(self):
         return GbnConfig.SW_SIZE

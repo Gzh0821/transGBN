@@ -278,12 +278,17 @@ class SendThread:
                         dis_2 = (value + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
                         self.window.slide(value)
                         # 若窗口滑动前seq在窗口中位置比ack靠前，则将seq置ack后一窗口位置
-                        if dis_1 <= dis_2:
+                        if not self.window.check() and dis_1 <= dis_2:
                             seq = self.window.begin_point
                         with ack_get_dict_lock:
                             ack_get_dict.pop(key)
                 # 超时
                 if not self.window.check():
+                    # 将所有非超时重传置为RT
+                    tmp_point = (self.window.begin_point + 1) % (GbnConfig.SW_SIZE + 1)
+                    while tmp_point != seq:
+                        self.window.set_status(tmp_point, "RT")
+                        tmp_point = (tmp_point + 1) % (GbnConfig.SW_SIZE + 1)
                     seq = self.window.begin_point
                 if seq == self.window.unused_point:
                     continue
@@ -311,7 +316,7 @@ class SendThread:
                         dis_2 = (value + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
                         self.window.slide(value)
                         # 若窗口滑动前seq在窗口中位置比ack靠前，则将seq置ack后一窗口位置
-                        if dis_1 <= dis_2:
+                        if not self.window.check() and dis_1 <= dis_2:
                             seq = self.window.begin_point
                         with ack_get_dict_lock:
                             ack_get_dict.pop(key)
@@ -319,6 +324,11 @@ class SendThread:
                     break
                 # 超时
                 if not self.window.check():
+                    # 将所有非超时重传置为RT
+                    tmp_point = (self.window.begin_point + 1) % (GbnConfig.SW_SIZE + 1)
+                    while tmp_point != seq:
+                        self.window.set_status(tmp_point, "RT")
+                        tmp_point = (tmp_point + 1) % (GbnConfig.SW_SIZE + 1)
                     seq = self.window.begin_point
                 if seq == self.window.unused_point:
                     continue
