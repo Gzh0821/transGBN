@@ -159,9 +159,11 @@ class ReceiveThread(threading.Thread):
             if rec_data[0] == GbnConfig.SYNC_FLAG[0]:
                 src = MACAddress.from_bytes(rec_data[1:7])
                 dst = MACAddress.from_bytes(rec_data[7:13])
-                if dst == GbnConfig.MAC_ADDRESS and src in ack_dict:
-                    ack_dict.pop(src)
-                    GbnConfig.print("[WARNING] Clear SEQ Number.")
+                if dst == GbnConfig.MAC_ADDRESS:
+                    if src in ack_dict:
+                        ack_dict.pop(src)
+                    GbnConfig.init()
+                    GbnConfig.print(f"[WARNING] Clear SEQ Number,{GbnConfig.TIME_OUT}.")
                 continue
             # 检查CRC纠错码
             try:
@@ -235,7 +237,7 @@ class SendThread:
             self.udp_handle.send_count = 0
             with ack_get_dict_lock:
                 ack_get_dict.clear()
-            if GbnConfig.DEST_MAC is None:
+            if not GbnConfig.TEST_MODE:
                 message = input("[INPUT] Please input the destination MAC address , or input 0 to exit:")
 
                 if message == '0':
@@ -247,16 +249,18 @@ class SendThread:
                 except ValueError:
                     GbnConfig.print("[WARNING] Invalid Mac Address!")
                     continue
+                message = input("[INPUT] Please input the file to send , or input 0 to exit:")
+                if message == '0':
+                    self.rec_thread.stop()
+                    self.rec_thread.join()
+                    return 0
             else:
                 dst_mac = GbnConfig.DEST_MAC
                 GbnConfig.print(f"[INFO] Destination MAC Address(from config):{str(dst_mac)}")
+                message = GbnConfig.FILE_PATH
+                GbnConfig.print(f"[INFO] File Path(from config):{message}")
             self.window = GbnWindows(dst_mac)
 
-            message = input("[INPUT] Please input the file to send , or input 0 to exit:")
-            if message == '0':
-                self.rec_thread.stop()
-                self.rec_thread.join()
-                return 0
             try:
                 file_handle = FileReader(message)
             except FileNotFoundError:
@@ -347,3 +351,9 @@ class SendThread:
             self.window.close_pbar()
             self.udp_handle.clear_send_count()
             GbnConfig.print(f"[INFO] File:{message} Send Finish!")
+        
+            if GbnConfig.TEST_MODE:
+                GbnConfig.print("[INFO] Test Finish!")
+                self.rec_thread.stop()
+                self.rec_thread.join()
+                return 0
