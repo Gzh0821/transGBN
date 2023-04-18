@@ -9,6 +9,8 @@ __pycache__/
 temp/test.pdf
 newtest.*
 temp/
+anal/figs/
+anal/analysations/
 # Distribution / packaging
 .Python
 build/
