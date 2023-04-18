@@ -77,7 +77,7 @@ class UDPCommunication:
         else:
             self.udp_socket.sendto(send_data, (self.dest_addr, self.dest_port))
 
-    def receive(self, buf_size: int = (128 + GbnConfig.DATA_SIZE + GbnConfig.SEQ_BIT_SIZE * 2)):
+    def receive(self, buf_size: int = (5012 + GbnConfig.SEQ_BIT_SIZE * 2)):
         """
         Receive data from the destination.
         :param buf_size:
@@ -285,7 +285,8 @@ class SendThread:
                         if not self.window.check() and dis_1 <= dis_2:
                             seq = self.window.begin_point
                         with ack_get_dict_lock:
-                            ack_get_dict.pop(key)
+                            if ack_get[key] == ack_get_dict[key]:
+                                ack_get_dict.pop(key)
                 # 超时
                 if not self.window.check():
                     # 将所有非超时重传置为RT
@@ -323,7 +324,8 @@ class SendThread:
                         if not self.window.check() and dis_1 <= dis_2:
                             seq = self.window.begin_point
                         with ack_get_dict_lock:
-                            ack_get_dict.pop(key)
+                            if ack_get[key] == ack_get_dict[key]:
+                                ack_get_dict.pop(key)
                 if tmp_end_flag:
                     break
                 # 超时
