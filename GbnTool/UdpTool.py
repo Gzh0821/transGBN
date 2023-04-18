@@ -163,7 +163,7 @@ class ReceiveThread(threading.Thread):
                     if src in ack_dict:
                         ack_dict.pop(src)
                     GbnConfig.init()
-                    GbnConfig.print(f"[WARNING] Clear SEQ Number,{GbnConfig.TIME_OUT}.")
+                    GbnConfig.print(f"[WARNING] Reset Config.")
                 continue
             # 检查CRC纠错码
             try:
@@ -264,7 +264,9 @@ class SendThread:
             try:
                 file_handle = FileReader(message)
             except FileNotFoundError:
-                GbnConfig.print("[WARNING] Invalid File Name.")
+                GbnConfig.print("[ERROR] Invalid File Name.")
+                if GbnConfig.TEST_MODE:
+                    return 0
                 continue
 
             sync_byte: bytes = GbnConfig.SYNC_FLAG + GbnConfig.MAC_ADDRESS.to_bytes() + dst_mac.to_bytes()
