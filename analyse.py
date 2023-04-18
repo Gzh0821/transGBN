@@ -1,3 +1,17 @@
+#   Copyright 2023 ZYX/1785207594 https://github.com/1785207594
+#
+#     Licensed under the Apache License, Version 2.0 (the "License");
+#     you may not use this file except in compliance with the License.
+#     You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#     Unless required by applicable law or agreed to in writing, software
+#     distributed under the License is distributed on an "AS IS" BASIS,
+#     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#     See the License for the specific language governing permissions and
+#     limitations under the License.
+
 from datetime import datetime
 import os
 import configparser
@@ -5,12 +19,13 @@ import re
 import sys
 import matplotlib.pyplot as plt
 
+
 # 使用须分别将两组程序置于gbn_1目录和gbn_2目录下
 # 配置gbn_1的config.ini包含Test项的DestMac和FilePath，配置gbn_2的config.ini不含Test项
 # 运行前先手动运行\gbn_2\main.py，然后运行该测试分析程序
 
 
-class analyse:
+class Analyse:
     def __init__(self):
         self.sec_dict = {"DataSize": "GbnFrame", "SWSize": "GbnFrame", "InitSeqNo": "GbnFrame", "Timeout": "Trans",
                          "SendLogName": "Log", "ReceiveLogName": "Log", "ErrorRate": "Random", "LostRate": "Random"}
@@ -72,7 +87,8 @@ class analyse:
         self.errorrate = conf.getint("Random", "ErrorRate")
         self.lostrate = conf.getint("Random", "LostRate")
         print(
-            f"Config: DataSize={self.datasize}, SWSize={self.swsize}, Timeout={self.timeout}, ErrorRate={self.errorrate}, LostRate={self.lostrate}")
+            f"Config: DataSize={self.datasize}, SWSize={self.swsize}, Timeout={self.timeout}, "
+            f"ErrorRate={self.errorrate}, LostRate={self.lostrate}")
 
     def change_config(self, sec: str, opt: str, para: str):
         conf1 = configparser.ConfigParser()
@@ -90,27 +106,27 @@ class analyse:
         with open(self.config_2_path, 'w') as confw:
             conf2.write(confw)
 
-    def update(self, type: str, value: int):
-        setattr(self, type.lower(), value)
+    def update(self, opt: str, value: int):
+        setattr(self, opt.lower(), value)
 
     def read_send_log(self, num: int, cnt: int):
         with open(self.send_log_1_path, 'r') as send_log:
             for line in send_log:
-                self.status = re.search(
+                status = re.search(
                     r'(?<=(\]\[)).*(?=(\]#))', line).group()
                 # 匹配Send和Warning记录
-                if(self.status != "SendDone"):
-                    self.time = datetime.strptime(re.search(
+                if status != "SendDone":
+                    time = datetime.strptime(re.search(
                         r'(?<=(#)).*(?=(#))', line).group(), '%Y-%m-%d %H:%M:%S,%f').timestamp()
-                    self.num = int(re.search(r'(?<=(No:))\d+', line).group())
-                    self.type = re.search(
+                    num = int(re.search(r'(?<=(No:))\d+', line).group())
+                    stat = re.search(
                         r'(?<=(status:)).{2,3}(?=(\)\())', line).group()
-                    if(self.num == 1):
-                        self.start_time = self.time
-                    if(self.type == "TO"):
+                    if num == 1:
+                        self.start_time = time
+                    if stat == "TO":
                         self.timeout_count += 1
                         self.retrans_count += 1
-                    elif(self.type == "RT"):
+                    elif stat == "RT":
                         self.retrans_count += 1
                 # 匹配SendDone记录
                 else:
@@ -194,7 +210,8 @@ class analyse:
         self.TO_count_list.clear()
         self.total_RT_count_list.clear()
         # 重置配置项为标准值
-        reset_list = ["DataSize", "SWSize", "InitSeqNo", "Timeout", "SendLogName", "ReceiveLogName", "ErrorRate", "LostRate"]
+        reset_list = ["DataSize", "SWSize", "InitSeqNo", "Timeout", "SendLogName", "ReceiveLogName", "ErrorRate",
+                      "LostRate"]
         conf1 = configparser.ConfigParser()
         conf2 = configparser.ConfigParser()
         standard = configparser.ConfigParser()
@@ -218,7 +235,7 @@ class analyse:
         self.read_config()
         conf_count = int(input("Please input the number of configuration files:"))
         # 循环测试所有配置文件
-        for conf_id in range(1,conf_count + 1):
+        for conf_id in range(1, conf_count + 1):
             # 输入待测配置项
             config = configparser.ConfigParser()
             if len(config.read(os.path.join(self.anal_conf_path, f"anal_{conf_id}.ini"))) == 0:
@@ -258,5 +275,6 @@ class analyse:
         return 0
 
 
-anal_loop = analyse()
-anal_loop.run()
+if __name__ == "__main__":
+    anal_loop = Analyse()
+    anal_loop.run()

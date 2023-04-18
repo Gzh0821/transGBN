@@ -355,7 +355,7 @@ class SendThread:
             self.window.close_pbar()
             self.udp_handle.clear_send_count()
             GbnConfig.print(f"[INFO] File:{message} Send Finish!")
-        
+
             if GbnConfig.TEST_MODE:
                 GbnConfig.print("[INFO] Test Finish!")
                 self.rec_thread.stop()

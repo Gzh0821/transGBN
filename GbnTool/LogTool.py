@@ -24,9 +24,9 @@ class GbnLog:
     def init(send_file: str, receive_file: str, show: bool = True):
         """
         Init the Logging.
-        :param send_file: file to storage send log.
-        :param receive_file: file to storage receive log.
-        :param show: if show the log in terminal.
+        :param send_file: File to storage sending log.
+        :param receive_file: File to storage reception log.
+        :param show: If show the log in terminal.
         :return:
         """
         formatter = logging.Formatter('[%(levelname)s][%(net_type)s]#%(asctime)s#: %(message)s')
