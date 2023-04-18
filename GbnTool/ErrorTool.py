@@ -16,9 +16,18 @@ class CRCError(ValueError):
     """
     CRC Error Type
     """
+
     def __init__(self, message: str, *args):
         super().__init__(message, *args)
         self.message = message
 
     def __str__(self):
         return f"CRC Check Error: {self.message}"
+
+
+class GbnConfigNotFoundError(Exception):
+    def __init__(self, config_name: str, config_file: str):
+        self.message = f"[{config_name}] not found in {config_file}"
+
+    def __str__(self):
+        return f"{self.message}"

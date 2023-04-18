@@ -13,10 +13,13 @@
 #     limitations under the License.
 
 from datetime import datetime
+from dataclasses import dataclass
 import os
 import configparser
 import re
 import sys
+from typing import TextIO
+
 import matplotlib.pyplot as plt
 
 
@@ -24,44 +27,43 @@ import matplotlib.pyplot as plt
 # 配置gbn_1的config.ini包含Test项的DestMac和FilePath，配置gbn_2的config.ini不含Test项
 # 运行前先手动运行\gbn_2\main.py，然后运行该测试分析程序
 
-
+@dataclass
 class Analyse:
-    def __init__(self):
-        self.sec_dict = {"DataSize": "GbnFrame", "SWSize": "GbnFrame", "InitSeqNo": "GbnFrame", "Timeout": "Trans",
-                         "SendLogName": "Log", "ReceiveLogName": "Log", "ErrorRate": "Random", "LostRate": "Random"}
-        self.gbn_1_path = os.path.join(".", "gbn_1", "")
-        self.gbn_2_path = os.path.join(".", "gbn_2", "")
-        self.send_log_1_path = None
-        self.send_log_2_path = None
-        self.recv_log_1_path = None
-        self.recv_log_2_path = None
-        self.config_1_path = os.path.join(".", "gbn_1", "config.ini")
-        self.config_2_path = os.path.join(".", "gbn_2", "config.ini")
-        self.standard_config_path = "standard_config.ini"
-        self.anal_data_path = os.path.join(".", "anal", "analysations", "")
-        self.anal_conf_path = os.path.join(".", "anal", "configs", "")
-        self.anal_fig_path = os.path.join(".", "anal", "figs", "")
+    sec_dict = {"DataSize": "GbnFrame", "SWSize": "GbnFrame", "InitSeqNo": "GbnFrame", "Timeout": "Trans",
+                "SendLogName": "Log", "ReceiveLogName": "Log", "ErrorRate": "Random", "LostRate": "Random"}
+    gbn_1_path = os.path.join(".", "gbn_1", "")
+    gbn_2_path = os.path.join(".", "gbn_2", "")
+    send_log_1_path: str = None
+    send_log_2_path: str = None
+    recv_log_1_path: str = None
+    recv_log_2_path: str = None
+    config_1_path = os.path.join(".", "gbn_1", "config.ini")
+    config_2_path = os.path.join(".", "gbn_2", "config.ini")
+    standard_config_path = "standard_config.ini"
+    anal_data_path = os.path.join(".", "anal", "analysations", "")
+    anal_conf_path = os.path.join(".", "anal", "configs", "")
+    anal_fig_path = os.path.join(".", "anal", "figs", "")
 
-        self.test_times = 1
-        self.datasize = 0
-        self.swsize = 0
-        self.timeout = 0
-        self.send_log_name = ""
-        self.recv_log_name = ""
-        self.errorrate = 0
-        self.lostrate = 0
-        self.start_time = 0.0
-        self.end_time = 0.0
-        self.num_count = 0
-        self.pdu_count = 0
-        self.timeout_count = 0
-        self.retrans_count = 0
-        self.change_value_list = []
-        self.time_cost_list = []
-        self.num_count_list = []
-        self.pdu_count_list = []
-        self.TO_count_list = []
-        self.total_RT_count_list = []
+    test_times = 1
+    datasize = 0
+    swsize = 0
+    timeout = 0
+    send_log_name = ""
+    recv_log_name = ""
+    errorrate = 0
+    lostrate = 0
+    start_time = 0.0
+    end_time = 0.0
+    num_count = 0
+    pdu_count = 0
+    timeout_count = 0
+    retrans_count = 0
+    change_value_list = []
+    time_cost_list = []
+    num_count_list = []
+    pdu_count_list = []
+    TO_count_list = []
+    total_RT_count_list = []
 
     def read_config(self):
         conf = configparser.ConfigParser()
@@ -157,12 +159,13 @@ class Analyse:
         os.remove(self.recv_log_1_path)
         os.remove(self.send_log_1_path)
 
-    def write(self, handle):
+    def write(self, handle: TextIO):
         # 写入分析记录
-        data_str = f"[Data](DataSize={self.datasize})(SWSize={self.swsize})\
-(Timeout={self.timeout})(ErrorRate={self.errorrate})(LostRate={self.lostrate})\
-(TimeCost={self.end_time - self.start_time})(NumCount={self.num_count})\
-(PDUCount={self.pdu_count})(TOCount={self.timeout_count})(TotalRTCount={self.retrans_count})\n"
+        data_str = f"[Data](DataSize={self.datasize})(SWSize={self.swsize})" \
+                   f"(Timeout={self.timeout})(ErrorRate={self.errorrate})" \
+                   f"(LostRate={self.lostrate})(TimeCost={self.end_time - self.start_time})" \
+                   f"(NumCount={self.num_count})(PDUCount={self.pdu_count})" \
+                   f"(TOCount={self.timeout_count})(TotalRTCount={self.retrans_count})\n"
         handle.write(data_str)
 
     def reset_value(self):

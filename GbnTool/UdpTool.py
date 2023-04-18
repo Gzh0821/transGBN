@@ -284,13 +284,13 @@ class SendThread:
                         dis_2 = (value + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
                         self.window.slide(value)
                         # 若窗口滑动前seq在窗口中位置比ack靠前，则将seq置ack后一窗口位置
-                        if not self.window.check() and dis_1 <= dis_2:
+                        if not self.window.check and dis_1 <= dis_2:
                             seq = self.window.begin_point
                         with ack_get_dict_lock:
                             if ack_get[key] == ack_get_dict[key]:
                                 ack_get_dict.pop(key)
                 # 超时
-                if not self.window.check():
+                if not self.window.check:
                     # 将所有非超时重传置为RT
                     tmp_point = (self.window.begin_point + 1) % (GbnConfig.SW_SIZE + 1)
                     while tmp_point != seq:
@@ -323,7 +323,7 @@ class SendThread:
                         dis_2 = (value + GbnConfig.SW_SIZE + 1 - self.window.unused_point) % (GbnConfig.SW_SIZE + 1)
                         self.window.slide(value)
                         # 若窗口滑动前seq在窗口中位置比ack靠前，则将seq置ack后一窗口位置
-                        if not self.window.check() and dis_1 <= dis_2:
+                        if not self.window.check and dis_1 <= dis_2:
                             seq = self.window.begin_point
                         with ack_get_dict_lock:
                             if ack_get[key] == ack_get_dict[key]:
@@ -331,7 +331,7 @@ class SendThread:
                 if tmp_end_flag:
                     break
                 # 超时
-                if not self.window.check():
+                if not self.window.check:
                     # 将所有非超时重传置为RT
                     tmp_point = (self.window.begin_point + 1) % (GbnConfig.SW_SIZE + 1)
                     while tmp_point != seq:

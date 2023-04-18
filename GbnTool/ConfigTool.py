@@ -16,6 +16,7 @@ from GbnTool import configparser, math, random, threading
 from GbnTool.AddrTool import MACAddress
 from GbnTool.LogTool import GbnLog
 from GbnTool.RandomTool import GbnRandom
+from GbnTool.ErrorTool import *
 
 
 # 全局配置工具
@@ -67,8 +68,9 @@ class GbnConfig:
         _gbn_config = configparser.ConfigParser()
         GbnConfig.print("[INFO] GbnConfig reading config.ini...")
         _gbn_config.read(config_path)
-        if not _gbn_config.has_section("GbnFrame"):
-            raise ValueError("GbnConfig config not found in config.ini")
+        for sec in ("GbnFrame", "Trans", "Client", "Log", "Random"):
+            if not _gbn_config.has_section(sec):
+                raise GbnConfigNotFoundError(sec, config_path)
 
         # 数据字段的长度
         GbnConfig.DATA_SIZE = _gbn_config.getint("GbnFrame", "DataSize")

@@ -202,6 +202,7 @@ class GbnWindows:
         """
         self.windows_list[point]["time"] = time.time()
 
+    @property
     def check(self) -> bool:
         """
         Check if the window is timeout.
