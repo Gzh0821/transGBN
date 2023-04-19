@@ -59,7 +59,7 @@ class GbnConfig:
             print(msg)
 
     @staticmethod
-    def init(config_path: str = "config.ini"):
+    def init(config_path: str = "config.ini", reset: bool = False):
         """
         Init Config.
         :param config_path:
@@ -111,9 +111,10 @@ class GbnConfig:
         GbnConfig.DEST_IP = _gbn_config.get("Client", "DestIP")
 
         # 初始化日志
-        GbnLog.init(_gbn_config.get("Log", "SendLogName"),
-                    _gbn_config.get("Log", "ReceiveLogName"),
-                    _gbn_config.getboolean("Log", "Show"))
+        if not reset:
+            GbnLog.init(_gbn_config.get("Log", "SendLogName"),
+                        _gbn_config.get("Log", "ReceiveLogName"),
+                        _gbn_config.getboolean("Log", "Show"))
 
         GbnConfig.ERROR_RATE = _gbn_config.getint("Random", "ErrorRate")
         GbnConfig.LOST_RATE = _gbn_config.getint("Random", "LostRate")

@@ -162,7 +162,7 @@ class ReceiveThread(threading.Thread):
                 if dst == GbnConfig.MAC_ADDRESS:
                     if src in ack_dict:
                         ack_dict.pop(src)
-                    GbnConfig.init()
+                    GbnConfig.init(reset=True)
                     GbnConfig.print(f"[WARNING] Reset Config.")
                 continue
             # 检查CRC纠错码
