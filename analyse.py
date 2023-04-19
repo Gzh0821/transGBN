@@ -120,10 +120,10 @@ class Analyse:
                 if status != "SendDone":
                     time = datetime.strptime(re.search(
                         r'(?<=(#)).*(?=(#))', line).group(), '%Y-%m-%d %H:%M:%S,%f').timestamp()
-                    num = int(re.search(r'(?<=(No:))\d+', line).group())
+                    fno = int(re.search(r'(?<=(No:))\d+', line).group())
                     stat = re.search(
                         r'(?<=(status:)).{2,3}(?=(\)\())', line).group()
-                    if num == 1:
+                    if fno == 1:
                         self.start_time = time
                     if stat == "TO":
                         self.timeout_count += 1
