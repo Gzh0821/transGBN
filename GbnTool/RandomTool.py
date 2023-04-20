@@ -21,6 +21,12 @@ class GbnRandom:
 
     @staticmethod
     def init(error_rate: int, lost_rate: int):
+        """
+        Initial Random Engine.
+        :param error_rate: error_rate num (1/n)
+        :param lost_rate: lost_rate num (1/n)
+        :return:
+        """
         GbnRandom.error_rate = 1.0 / error_rate
         GbnRandom.lost_rate = 1.0 / lost_rate
 
